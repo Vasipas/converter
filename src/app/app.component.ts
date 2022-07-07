@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { DataService } from './data.service';
 
 type Currency = {
   ccy: string;
@@ -13,11 +13,12 @@ type Currency = {
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
+  providers: [DataService]
 })
 export class AppComponent implements OnInit {
   public exchangeForm: FormGroup;
 
-  constructor(private http: HttpClient, private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder, private dataService: DataService) {
     this.exchangeForm = this.formBuilder.group({
       fromInput: 0,
       toInput: 0,
@@ -52,21 +53,17 @@ export class AppComponent implements OnInit {
   };
 
   ngOnInit() {
-    this.http
-      .get('https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5')
-      .subscribe((data: any) => {
-        console.log(data)
-        data.forEach((element:any) => {
-          if(element.base_ccy !== 'UAH') {
-            let base = data.find((el: any) => el.ccy === element.base_ccy)
-            element.buy = (element.buy*base.buy).toString()
-            element.sale = (element.sale*base.sale).toString()
-            element.base_ccy = base.base_ccy
-          }
-        });
-
-        this.currencies.push(...data);
-        console.log(this.currencies)
-      });
+    this.dataService.fetchData()
+        .subscribe((data: any) => {
+            data.forEach((element:any) => {
+              if(element.base_ccy !== 'UAH') {
+                let base = data.find((el: any) => el.ccy === element.base_ccy)
+                element.buy = (element.buy*base.buy).toString()
+                element.sale = (element.sale*base.sale).toString()
+                element.base_ccy = base.base_ccy
+              }
+            });
+            this.currencies.push(...data);
+          });
   }
 }
